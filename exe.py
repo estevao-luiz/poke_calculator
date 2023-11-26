@@ -1,7 +1,7 @@
 from tkinter import * 
 from tkinter import messagebox 
-import código as cd
-import mapa_interativo as mp
+import code as cd
+import interactive_map as mp
 
 #version = ""
 #province = "" 
