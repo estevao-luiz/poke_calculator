@@ -1,5 +1,6 @@
 import matplotlib
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 from collections import Counter
 import numpy as np
 import seaborn as sns
@@ -7,11 +8,12 @@ import pandas as pd
 
 
 
+#tipos_pokemon = ['Normal, ', 'Fighting, ', 'Flying, ', 'Poison, ', 'Ground, ', 'Rock, ', 'Bug, ', 'Ghost, ', 'Steel, ', 'Fire, ', 'Water, ', 'Grass, ', 'Electric, ', 'Psychic, ', 'Ice, ', 'Dragon, ', 'Dark, ', 'Fairy, ']
 tipos_pokemon = []
 
 def main(tipos_pokemon):
     
-    print(tipos_pokemon)
+    #print(tipos_pokemon)
     
     # Contador de tipos de Pokémon
     contador_tipos = Counter(tipos_pokemon)
@@ -25,20 +27,20 @@ def main(tipos_pokemon):
     'Normal': 'lightgrey',
     'Fighting': 'darkorange',
     'Flying': 'skyblue',
-    'Poison': 'purple',
-    'Ground': 'saddlebrown',
-    'Rock': 'dimgray',
-    'Bug': 'limegreen',
-    'Ghost': 'darkviolet',
-    'Steel': 'silver',
+    'Poison': 'darkorchid',
+    'Ground': 'goldenrod',
+    'Rock': 'tan',
+    'Bug': 'yellowgreen',
+    'Ghost': 'slateblue',
+    'Steel': 'darkgray',
     'Fire': 'orangered',
     'Water': 'dodgerblue',
     'Grass': 'limegreen',
     'Electric': 'gold',
-    'Psychic': 'mediumvioletred',
-    'Ice': 'lightcyan',
+    'Psychic': 'palevioletred',
+    'Ice': 'powderblue',
     'Dragon': 'royalblue',
-    'Dark': 'black',
+    'Dark': 'dimgray',
     'Fairy': 'lightpink',
 }
 
@@ -65,9 +67,12 @@ def main(tipos_pokemon):
             tipos[i] = t.split(",")[0].strip()
             
     # Criar o gráfico de pizza
-    plt.pie(quantidades, labels=tipos, autopct='%1.1f%%', startangle=140, colors=cores)
+    legend_patches = [mpatches.Patch(color=color, label=tipo) for tipo, color in cores_pokemon.items()]
+    plt.pie(quantidades, autopct='%1.1f%%', startangle=140, colors=cores)
     plt.axis('equal')  # Equaliza o aspecto para que o gráfico de pizza seja circular
     plt.title('Distribuição de Tipos de Pokémon na região')
+    # Adicionar a legenda
+    plt.legend(handles=legend_patches, bbox_to_anchor=(1, 0.5), loc='center left')
     plt.show()
 
 def plot_encounter_rate(rates, names):
@@ -144,4 +149,4 @@ def plot_encounter_heatmap(effectiveness, resistance):
     plt.show()
     
     
-main(tipos_pokemon) 
+main(tipos_pokemon)    
