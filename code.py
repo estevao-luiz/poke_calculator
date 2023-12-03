@@ -9,7 +9,7 @@ version = ""
 province = "" 
 area = "" 
 biome = "" 
-party = ""
+party = []
 
 def main():
   
@@ -87,24 +87,23 @@ def asses_damage(typing):
     "Fairy": {"Normal": 1, "Fighting": 2, "Flying": 1, "Poison": 0.5, "Ground": 1, "Rock": 1, "Bug": 1, "Ghost": 1, "Steel": 0.5, "Fire": 1, "Water": 1, "Grass": 1, "Electric": 1, "Psychic": 1, "Ice": 1, "Dragon": 2, "Dark": 2, "Fairy": 1}
 }   
     
-    
     # Função auxiliar para calcular a eficácia
     
     def calculate_effectiveness(typing):
         effectiveness = defaultdict(float)
         resistance = defaultdict(float)
-        immunity = defaultdict(float)
         for t1 in typing:
             if t1 in type_damage:
                 for t2 in type_damage:
                         effectiveness[t2] += type_damage[t2][t1]
                         resistance[t2] += type_damage[t1][t2]
                         if type_damage[t1][t2] == 0:
-                            immunity[t2] += type_damage[t1][t2]
-        return effectiveness, resistance, immunity
+                            resistance[t2] += type_damage[t1][t2] - 0.5
+                            
+        return effectiveness, resistance
     
-    effectiveness1, resistance1, immunity1 = calculate_effectiveness(type1)
-    effectiveness2, resistance2, immunity2 = calculate_effectiveness(type2)
+    effectiveness1, resistance1 = calculate_effectiveness(type1)
+    effectiveness2, resistance2 = calculate_effectiveness(type2)
     
     def combine_dicts(dict1, dict2): #vai combinar dois dicionários e retornar as chaves e seus valores multiplicados.
         result_dict = {}
@@ -425,7 +424,6 @@ def compare_parties(atual, ideal):
     
     types_atual = defaultdict(float)
    
-    
     with open(name_file, encoding = 'utf-8', mode = 'r') as file:
         lines = file.readlines()
         
@@ -441,25 +439,32 @@ def compare_parties(atual, ideal):
             if pokes != "" and not pokemon_encontrado:
                 return f"O pokémon {pokes} não se encontra em Paldea."
         
-        
+        ideal_copy = ideal.copy()   
         
         for pokes_atuals, types_atuals  in types_atual.items():
-            for types_ideals, pokes_ideals  in ideal.items():
+            for types_ideals, pokes_ideals  in ideal_copy.items():
                if  types_atuals == types_ideals: 
                    del ideal[types_atuals] 
+                   ideal[types_atuals] = pokes_atuals
                elif types_atuals.split(" , ")[-1]+" , "+types_atuals.split(" , ")[0] == types_ideals:
                    del ideal[types_atuals.split(" , ")[-1]+" , "+types_atuals.split(" , ")[0]]
-        
+                   ideal[types_atuals] = pokes_atuals
+                   
         ideal_str = json.dumps(list(ideal.values()), ensure_ascii=False)
         atual_str = json.dumps(list(types_atual.keys()), ensure_ascii=False)
-        
-        if len(ideal) == 0:
-            return f"A equipe {atual_str} já é ideal." #Caso em que a equipe ideal é a atual.
-        elif len(ideal) == 6:
-            return f"A equipe ideal é {ideal_str}." #Caso em que não é dado nenhum pokémon ou nenhum da equipe é ideal.
-        elif len(ideal) >= 1:  
-            return f"Para ficar ideal, à sua equipe {atual_str} deve ser adionados os pokémons {ideal_str}" #Caso em que a equipe já possui pokes ideais.
+
+        return f"A equipe ideal é {ideal_str}." #Caso em que não é dado nenhum pokémon ou nenhum da equipe é ideal.
         
     
     
 main()
+                
+
+        
+                    
+            
+
+    
+        
+       
+        
