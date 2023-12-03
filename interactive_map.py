@@ -1,466 +1,405 @@
-import json
-import sys
-import re 
-import random 
-import data_visual as dv
+from tkinter import *
+import tkinter as tk
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib.pyplot as plt
+from matplotlib.patches import Polygon
+from PIL import Image
+from shapely.geometry import Point
 
+class InteractiveButton_version:
+    def __init__(self, coordenadas):
+        self.version = None
 
-version = ""
-province = "" 
-area = "" 
-biome = "" 
-party = ""
+        self.root = Toplevel()
+        self.root.title("Mapa Interativo")
+        
+
+        self.fig, self.ax = plt.subplots()
+        img = plt.imread('version.jpg')
+        self.ax.imshow(img)
+
+        for regiao, coords in coordenadas.items():
+            poly = Polygon(list(zip(coords[0], coords[1])), facecolor='none', edgecolor='none', label=regiao, picker=True)
+            self.ax.add_patch(poly)
+
+        self.fig.canvas.mpl_connect('button_press_event', self.on_polygon_click)
+
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
+        self.canvas_widget = self.canvas.get_tk_widget()
+        self.canvas_widget.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+        self.label_regiao = Label(self.root, text="Clique em uma região.")
+        self.label_regiao.pack()
+
+    def on_polygon_click(self, event):
+        for poly in self.ax.patches:
+            if isinstance(poly, Polygon) and poly.contains_point((event.x, event.y)):
+                self.label_regiao.config(text=f'Você clicou na região: {poly.get_label()}')
+                self.version = poly.get_label()
+                self.version = str(self.version)
+                self.root.destroy()
+                
+                
+class InteractiveMap_paldea:
+    def __init__(self, coordenadas_paldea):
+        self.province = None
+
+        self.root = Toplevel()
+        self.root.title("Mapa Interativo")
+        
+
+        self.fig, self.ax = plt.subplots()
+        img = plt.imread('paldeanmap.jpeg')
+        self.ax.imshow(img)
+
+        for regiao, coords in coordenadas_paldea.items():
+            poly = Polygon(list(zip(coords[0], coords[1])), facecolor='none', edgecolor='none', label=regiao, picker=True)
+            self.ax.add_patch(poly)
+
+        self.fig.canvas.mpl_connect('button_press_event', self.on_polygon_click)
+
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
+        self.canvas_widget = self.canvas.get_tk_widget()
+        self.canvas_widget.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+        self.label_regiao = Label(self.root, text="Clique em uma região.")
+        self.label_regiao.pack()
+
+    def on_polygon_click(self, event):
+        for poly in self.ax.patches:
+            if isinstance(poly, Polygon) and poly.contains_point((event.x, event.y)):
+                self.label_regiao.config(text=f'Você clicou na região: {poly.get_label()}')
+                self.province = poly.get_label()
+                self.province = str(self.province)
+                self.root.destroy()
+             
+                
+class InteractiveMap_province:
+    def __init__(self, coordenadas_area, province):
+        self.area = None
+
+        self.root = Toplevel()
+        self.root.title("Mapa Interativo")
+        
+        self.fig, self.ax = plt.subplots()
+        img = plt.imread(f'{province}.jpeg')
+        self.ax.imshow(img)
+
+        for regiao, coords in coordenadas_area.items():
+            poly = Polygon(list(zip(coords[0], coords[1])), facecolor='none', edgecolor='none', label=regiao, picker=True)
+            self.ax.add_patch(poly)
+
+        self.fig.canvas.mpl_connect('button_press_event', self.on_polygon_click)
+ 
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
+        self.canvas_widget = self.canvas.get_tk_widget()
+        self.canvas_widget.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+        self.label_regiao = Label(self.root, text="Clique em uma área.")
+        self.label_regiao.pack()
+
+    def on_polygon_click(self, event):
+        for poly in self.ax.patches:
+            if isinstance(poly, Polygon) and poly.contains_point((event.x, event.y)):
+                self.label_regiao.config(text=f'Você clicou na área: {poly.get_label()}')
+                self.area = poly.get_label()
+                self.area = str(self.area)
+                self.root.destroy()            
+  
+                
+class InteractiveButton_biome:
+    def __init__(self, coordenadas, province, area):
+        self.biome = None
+
+        self.root = Toplevel()
+        self.root.title("Mapa Interativo")
+        
+        self.fig, self.ax = plt.subplots()
+        img = plt.imread('biomes.jpg')
+        self.ax.imshow(img)
+
+        for regiao, coords in coordenadas.items():
+            poly = Polygon(list(zip(coords[0], coords[1])), facecolor='none', edgecolor='none', label=regiao, picker=True)
+            self.ax.add_patch(poly)
+
+        self.fig.canvas.mpl_connect('button_press_event', lambda event: self.on_polygon_click(event, province, area))
+ 
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
+        self.canvas_widget = self.canvas.get_tk_widget()
+        self.canvas_widget.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+        self.label_regiao = Label(self.root, text="Clique em uma área.")
+        self.label_regiao.pack()
+
+    def on_polygon_click(self, event, province, area):
+        
+        doc = 'biomas.txt'
+        
+        with open(doc, encoding= 'utf-8', mode='r') as file:
+            lines = file.readlines()
+            
+            
+            for poly in self.ax.patches:
+                if isinstance(poly, Polygon) and poly.contains_point((event.x, event.y)):
+                    self.label_regiao.config(text=f'Você clicou no bioma: {poly.get_label()}')
+                    self.biome = poly.get_label()
+                    for line in lines:
+                        if self.biome in line:
+                            if f'{province} ({area})' in line:
+                                self.biome = poly.get_label()
+                                self.biome = str(self.biome)
+                                self.root.destroy()  
+                            else:
+                                self.label_regiao.config(text=f'O bioma: {poly.get_label()}, não existe na área que você selecionou')
+ 
 
 def main():
-
-    #Para facilitar os testes:
-    #version = input("Which of Paldean Pokedex do you play in? Scarlet or Violet \nAnswer with S or V\n")
-    #version = "Scarlet"
-    #province = input("Which of Province of Pandean Map are you in? \nExample: South Province\n")
-    #province = "South"
-    #area = input("Which of area of Paldean Province are you in? \nExample: Area One\n")
-    #area = "One"
-    #biome = str(input("Which of biomes are you in? \nExample: Grass\n"))
-    #biome = "Grass"
     
-    #party = ["Pikachu", "", "", "", "", ""]
+    version = None
     
-    #Leitura da equipe
-    #for i in range(6):
-        #n = i+1
-        #Partner = input(f"What is your current party? Pokémon number {n} \nFirst letter always capitalized\n")
-        #party[i] = Partner
-        
-    #lineindex = encounter_biome(Version, Province, Area, Biome)    
-    #print(lineindex)
+    coordenadas_version = {'Scarlet':
+    ([0, 539, 539, 0, 2],
+    [0, 0, 1078, 1078, 2]),
     
-    test1 = poke_finder(area, province, version)
-    #print(test1)
-    #print(len(test1))
-    test2, test3 = asses_encounter(test1, biome)
-    #print(test2, test3)
-    test4 = calculate_rate(test2[0], test2[1], test3)
-    test5 = types(test4)
-    #print(test5)
-    #from dano import asses_damage
+    'Violet':
+    ([539, 539, 1078, 1080, 539],
+    [0, 1080, 1080, 0, 2])
+    }
     
-    test6 = asses_damage(test5)
-    #print(test6)
-    test7 = ideal_party(test6)
-    print("Uma possível equipe:")
+    app_0 = InteractiveButton_version(coordenadas_version)
     
-    #test7_str = json.dumps(list(test7.values()), ensure_ascii=False) 
-    #print(test7_str)
+    app_0.root.wait_window()
     
-    test8 = compare_parties(party, test7)
-    print(test8)
+    province = None
     
-    result = test8
+    # Coordenadas dos polígonos (obtidas pelo VIA - Oxford)
+    coordenadas_paldea = {
+        'South': (
+            [59, 70, 78, 84, 89, 92, 93, 96, 99, 101, 106, 113, 118, 127, 142, 139, 129, 130, 136, 151, 155, 164, 177, 188, 198, 217, 227, 237, 252, 258, 266, 284, 286, 288, 293, 297, 303, 309, 321, 321, 319, 317, 319, 337, 331, 307, 289, 287, 274, 231, 228, 217, 196, 195, 181, 169, 159, 145, 134, 121, 114, 94, 81, 77, 51, 44, 44, 49, 60],
+            [358, 356, 357, 359, 359, 361, 361, 358, 345, 339, 334, 326, 315, 316, 302, 299, 296, 287, 283, 280, 288, 287, 290, 304, 307, 306, 314, 314, 322, 320, 307, 306, 304, 308, 304, 309, 307, 316, 320, 320, 332, 343, 345, 356, 384, 402, 406, 413, 418, 416, 426, 430, 425, 413, 419, 418, 412, 412, 409, 413, 411, 421, 419, 418, 415, 404, 366, 359, 358]
+        ),
+        'East': (
+            [338, 389, 425, 405, 389, 369, 332, 325, 316, 292, 276, 277, 265, 266, 279, 286, 266, 260, 257, 266, 265, 282, 284, 294, 296, 303, 308, 322, 320, 318, 321, 338],
+            [355, 339, 280, 211, 202, 201, 188, 179, 178, 213, 218, 228, 229, 235, 242, 249, 251, 239, 239, 261, 305, 304, 301, 304, 307, 306, 314, 319, 335, 337, 347, 355]
+        ),
+        'West': (
+            [43, 125, 145, 180, 180, 185, 189, 185, 189, 192, 198, 205, 215, 204, 204, 210, 206, 194, 190, 193, 186, 185, 179, 175, 165, 163, 156, 156, 152, 153, 150, 152, 138, 129, 129, 140, 126, 116, 112, 112, 98, 94, 68, 58, 61, 49, 42, 24, 20, 32, 40, 28, 34, 43, 43],
+            [182, 185, 173, 167, 151, 149, 143, 139, 137, 137, 132, 132, 142, 165, 188, 193, 199, 204, 210, 216, 216, 224, 228, 242, 250, 250, 262, 264, 269, 276, 276, 280, 279, 287, 298, 301, 314, 313, 318, 320, 338, 359, 351, 355, 342, 333, 318, 308, 280, 249, 230, 205, 198, 192, 182]
+        ),
+        'North': (
+            [43, 38, 102, 146, 190, 286, 364, 376, 384, 406, 417, 406, 391, 370, 359, 332, 326, 312, 290, 275, 273, 263, 261, 269, 281, 267, 266, 265, 259, 256, 254, 244, 242, 231, 217, 205, 199, 192, 196, 204, 207, 212, 205, 206, 217, 201, 190, 183, 187, 178, 178, 144, 125, 42],
+            [178, 97, 58, 75, 48, 54, 95, 127, 148, 162, 202, 210, 200, 199, 192, 186, 174, 176, 209, 214, 224, 227, 233, 241, 246, 248, 248, 240, 236, 236, 230, 222, 218, 217, 207, 207, 212, 211, 205, 202, 202, 193, 186, 165, 140, 128, 136, 139, 144, 151, 166, 172, 184, 178]
+        ),
+        'The Great Crater of Paldea': (
+            [150, 154, 173, 185, 193, 218, 228, 236, 250, 255, 262, 263, 253, 240, 227, 214, 203, 197, 194, 194, 188, 186, 179, 176, 166, 157, 154, 151],
+            [281, 285, 287, 302, 306, 304, 313, 312, 320, 318, 307, 263, 234, 221, 218, 209, 211, 216, 215, 217, 217, 225, 229, 244, 251, 263, 279, 281]
+        )
+    }
    
-    
-    
-def asses_damage(typing):
-    
-    from collections import defaultdict
-    
-    type1 = typing[0]
-    type2 = typing[1]
-    
-    # Dicionário de tipos e seus fatores de dano
-    type_damage = {
-    "Normal": {"Normal": 1, "Fighting": 1, "Flying": 1, "Poison": 1, "Ground": 1, "Rock": 0.5, "Bug": 1, "Ghost": 0, "Steel": 0.5, "Fire": 1, "Water": 1, "Grass": 1, "Electric": 1, "Psychic": 1, "Ice": 1, "Dragon": 1, "Dark": 1, "Fairy": 1},
-    "Fighting": {"Normal": 2, "Fighting": 1, "Flying": 0.5, "Poison": 0.5, "Ground": 1, "Rock": 2, "Bug": 0.5, "Ghost": 0, "Steel": 2, "Fire": 1, "Water": 1, "Grass": 1, "Electric": 1, "Psychic": 0.5, "Ice": 2, "Dragon": 1, "Dark": 2, "Fairy": 0.5},
-    "Flying": {"Normal": 1, "Fighting": 2, "Flying": 1, "Poison": 1, "Ground": 1, "Rock": 0.5, "Bug": 2, "Ghost": 1, "Steel": 0.5, "Fire": 1, "Water": 1, "Grass": 2, "Electric": 0.5, "Psychic": 1, "Ice": 1, "Dragon": 1, "Dark": 1, "Fairy": 1},
-    "Poison": {"Normal": 1, "Fighting": 1, "Flying": 1, "Poison": 0.5, "Ground": 0.5, "Rock": 0.5, "Bug": 1, "Ghost": 0.5, "Steel": 0, "Fire": 1, "Water": 1, "Grass": 2, "Electric": 1, "Psychic": 1, "Ice": 1, "Dragon": 1, "Dark": 1, "Fairy": 2},
-    "Ground": {"Normal": 1, "Fighting": 1, "Flying": 0, "Poison": 2, "Ground": 1, "Rock": 2, "Bug": 0.5, "Ghost": 1, "Steel": 2, "Fire": 2, "Water": 1, "Grass": 0.5, "Electric": 2, "Psychic": 1, "Ice": 1, "Dragon": 1, "Dark": 1, "Fairy": 1},
-    "Rock": {"Normal": 1, "Fighting": 0.5, "Flying": 2, "Poison": 1, "Ground": 0.5, "Rock": 1, "Bug": 2, "Ghost": 1, "Steel": 0.5, "Fire": 2, "Water": 1, "Grass": 1, "Electric": 1, "Psychic": 1, "Ice": 2, "Dragon": 1, "Dark": 1, "Fairy": 1},
-    "Bug": {"Normal": 1, "Fighting": 0.5, "Flying": 0.5, "Poison": 0.5, "Ground": 1, "Rock": 1, "Bug": 1, "Ghost": 0.5, "Steel": 0.5, "Fire": 0.5, "Water": 1, "Grass": 2, "Electric": 1, "Psychic": 2, "Ice": 1, "Dragon": 1, "Dark": 2, "Fairy": 0.5},
-    "Ghost": {"Normal": 0, "Fighting": 1, "Flying": 1, "Poison": 1, "Ground": 1, "Rock": 1, "Bug": 1, "Ghost": 2, "Steel": 1, "Fire": 1, "Water": 1, "Grass": 1, "Electric": 1, "Psychic": 2, "Ice": 1, "Dragon": 1, "Dark": 0.5, "Fairy": 1},
-    "Steel": {"Normal": 1, "Fighting": 1, "Flying": 1, "Poison": 1, "Ground": 1, "Rock": 2, "Bug": 1, "Ghost": 1, "Steel": 0.5, "Fire": 0.5, "Water": 0.5, "Grass": 1, "Electric": 0.5, "Psychic": 1, "Ice": 2, "Dragon": 1, "Dark": 1, "Fairy": 2},
-    "Fire": {"Normal": 1, "Fighting": 1, "Flying": 1, "Poison": 1, "Ground": 1, "Rock": 0.5, "Bug": 2, "Ghost": 1, "Steel": 2, "Fire": 0.5, "Water": 0.5, "Grass": 2, "Electric": 1, "Psychic": 1, "Ice": 2, "Dragon": 0.5, "Dark": 1, "Fairy": 1},
-    "Water": {"Normal": 1, "Fighting": 1, "Flying": 1, "Poison": 1, "Ground": 2, "Rock": 2, "Bug": 1, "Ghost": 1, "Steel": 1, "Fire": 2, "Water": 0.5, "Grass": 0.5, "Electric": 1, "Psychic": 1, "Ice": 1, "Dragon": 0.5, "Dark": 1, "Fairy": 1},
-    "Grass": {"Normal": 1, "Fighting": 1, "Flying": 0.5, "Poison": 0.5, "Ground": 2, "Rock": 2, "Bug": 0.5, "Ghost": 1, "Steel": 0.5, "Fire": 0.5, "Water": 2, "Grass": 0.5, "Electric": 1, "Psychic": 1, "Ice": 1, "Dragon": 0.5, "Dark": 1, "Fairy": 1},
-    "Electric": {"Normal": 1, "Fighting": 1, "Flying": 2, "Poison": 1, "Ground": 0, "Rock": 1, "Bug": 1, "Ghost": 1, "Steel": 1, "Fire": 1, "Water": 2, "Grass": 0.5, "Electric": 0.5, "Psychic": 1, "Ice": 1, "Dragon": 0.5, "Dark": 1, "Fairy": 1},
-    "Psychic": {"Normal": 1, "Fighting": 2, "Flying": 1, "Poison": 2, "Ground": 1, "Rock": 1, "Bug": 1, "Ghost": 1, "Steel": 0.5, "Fire": 1, "Water": 1, "Grass": 1, "Electric": 1, "Psychic": 0.5, "Ice": 1, "Dragon": 1, "Dark": 0, "Fairy": 1},
-    "Ice": {"Normal": 1, "Fighting": 1, "Flying": 2, "Poison": 1, "Ground": 2, "Rock": 1, "Bug": 1, "Ghost": 1, "Steel": 0.5, "Fire": 0.5, "Water": 0.5, "Grass": 2, "Electric": 1, "Psychic": 1, "Ice": 0.5, "Dragon": 2, "Dark": 1, "Fairy": 1},
-    "Dragon": {"Normal": 1, "Fighting": 1, "Flying": 1, "Poison": 1, "Ground": 1, "Rock": 1, "Bug": 1, "Ghost": 1, "Steel": 0.5, "Fire": 1, "Water": 1, "Grass": 1, "Electric": 1, "Psychic": 1, "Ice": 1, "Dragon": 2, "Dark": 1, "Fairy": 0},
-    "Dark": {"Normal": 1, "Fighting": 0.5, "Flying": 1, "Poison": 1, "Ground": 1, "Rock": 1, "Bug": 1, "Ghost": 2, "Steel": 1, "Fire": 1, "Water": 1, "Grass": 1, "Electric": 1, "Psychic": 2, "Ice": 1, "Dragon": 1, "Dark": 0.5, "Fairy": 0.5},
-    "Fairy": {"Normal": 1, "Fighting": 2, "Flying": 1, "Poison": 0.5, "Ground": 1, "Rock": 1, "Bug": 1, "Ghost": 1, "Steel": 0.5, "Fire": 1, "Water": 1, "Grass": 1, "Electric": 1, "Psychic": 1, "Ice": 1, "Dragon": 2, "Dark": 2, "Fairy": 1}
-}   
-    
-    
-    # Função auxiliar para calcular a eficácia
-    
-    def calculate_effectiveness(typing):
-        effectiveness = defaultdict(float)
-        resistance = defaultdict(float)
-        immunity = defaultdict(float)
-        for t1 in typing:
-            if t1 in type_damage:
-                for t2 in type_damage:
-                        effectiveness[t2] += type_damage[t2][t1]
-                        resistance[t2] += type_damage[t1][t2]
-                        if type_damage[t1][t2] == 0:
-                            immunity[t2] += type_damage[t1][t2]
-        return effectiveness, resistance, immunity
-    
-    effectiveness1, resistance1, immunity1 = calculate_effectiveness(type1)
-    effectiveness2, resistance2, immunity2 = calculate_effectiveness(type2)
-    
-    def combine_dicts(dict1, dict2): #vai combinar dois dicionários e retornar as chaves e seus valores multiplicados.
-        result_dict = {}
-        
-        for key1, value1 in dict1.items():
-            for key2, value2 in dict2.items():
-                if key1 == key2: #evita que se duplique o tipo no identificador do dicionário.
-                    new_key = key1
-                else: 
-                    new_key = f"{key1} , {key2}" #escreve a dupla tipagem
-                new_value = value1 * value2
-                if f"{key2} , {key1}" not in result_dict: #garante que não se repita estruturas como tipo1,tipo2 e tipo2,tipo1.
-                    result_dict[new_key] = new_value
-                elif int(new_value) > int(result_dict[f"{key2} , {key1}"]): #se o valor tipo2,tipo1 for maior que tipo1,tipo2 então subtitue na casa tipo1,tipo2.
-                    result_dict[new_key] = result_dict.pop(f"{key2} , {key1}") #renomeia a chave
-                    result_dict[new_key] = new_value
-        
-        return result_dict
-    
-    combo_effectiveness = combine_dicts(effectiveness1, effectiveness2)
-    combo_effectiveness = {key: int(values) for key, values in combo_effectiveness.items()}
-    #print(combo_effectiveness)
-    
-    #print(combo_effectiveness)
-    #para que o segundo dicionário siga o mesmo padrão decrescente:
-    for key in resistance1:
-        resistance1[key] *= -1
-    
-    combo_resistance = combine_dicts(resistance1,resistance2)
-    #print(combo_resistance)
-    
-    
-    def swap_indices(dict1, dict2):
+    if app_0 is not None:
+        app_1 = InteractiveMap_paldea(coordenadas_paldea)
 
-        #Esta função serve para fazer a ordem das tipagens ficar normalizadas nas chaves
-        #Para evitar KeyError: b , a ou a , b quando for feita comparação entre chaves.
-        
-        new_dict2 = {}
+    # Aguarda o fechamento da janela antes de retornar o valor da province
+    app_1.root.wait_window()
     
-        for key2, value2 in dict2.items():
-        # Verifique se a chave do tipo "b , a" está no dicionário 1
-            if key2 not in dict1:
-                new_key2 = key2.split(' , ')[-1] + ' , ' + key2.split(' , ')[0]  #inverte a tipagem
-                new_dict2[new_key2] = value2  # Adicione ao novo dicionário
-            else:
-                new_dict2[key2] = value2  # Mantenha a chave original
+    area = None
+    
+    coordenadas_area = {'South': {'Six':
+    ([25, 47, 63, 78, 87, 108, 112, 110, 111, 108, 107, 79, 22, 8, 9, 25],
+    [133, 129, 135, 137, 147, 150, 157, 167, 173, 194, 211, 221, 215, 195, 140, 133]),
+    
+    'Two':
+    ([94, 116, 126, 155, 183, 201, 208, 215, 221, 227, 223, 201, 175, 175, 165, 159, 144, 133, 135, 151, 127, 119, 109, 109, 91, 95],
+    [111, 124, 135, 145, 145, 139, 117, 113, 94, 92, 79, 69, 45, 33, 32, 23, 22, 34, 44, 51, 76, 71, 75, 85, 108, 111]),
+    
+    'Four':
+    ([92, 114, 128, 157, 171, 205, 212, 218, 225, 222, 217, 226, 250, 251, 243, 229, 225, 197, 174, 153, 139, 123, 111, 111, 115, 114, 83, 91],
+    [113, 127, 142, 150, 150, 143, 118, 116, 132, 151, 163, 179, 185, 193, 205, 206, 213, 217, 209, 207, 203, 209, 209, 193, 183, 149, 140, 113]),
+    
+    'One':
+    ([232, 230, 265, 281, 345, 329, 308, 301, 295, 275, 267, 263, 271, 273, 274, 297, 272, 273, 258, 217, 194, 178, 183, 202, 225, 231, 231, 225, 220, 229, 223, 228, 251, 256, 246, 232],
+    [209, 227, 237, 217, 217, 183, 171, 183, 184, 173, 177, 170, 159, 159, 140, 117, 81, 72, 57, 58, 33, 31, 47, 65, 75, 91, 95, 97, 113, 131, 165, 176, 182, 193, 208, 209]),
+    
+    'Three':
+    ([276, 290, 307, 321, 329, 354, 381, 409, 407, 387, 374, 369, 351, 344, 334, 334, 325, 317, 308, 296, 277, 277],
+    [72, 71, 82, 79, 60, 59, 60, 79, 95, 105, 100, 89, 86, 91, 89, 105, 116, 111, 116, 112, 80, 71]),
+    
+    'Five':
+    ([348, 364, 391, 423, 431, 404, 401, 386, 373, 367, 350, 337, 337, 328, 299, 278, 275, 268, 275, 296, 307, 329, 348, 348],
+    [215, 202, 195, 170, 132, 116, 103, 108, 103, 92, 91, 97, 105, 119, 117, 145, 164, 170, 169, 181, 167, 180, 212, 214]),
+    
+    'South Paldean Sea':
+    ([0, 45, 28, 9, 5, 6, 17, 61, 71, 84, 110, 127, 138, 144, 156, 171, 190, 210, 226, 227, 236, 261, 272, 278, 280, 344, 360, 365, 389, 422, 430, 436, 434, 424, 439, 439, 0, 0],
+    [70, 117, 128, 136, 150, 195, 215, 221, 224, 224, 212, 212, 208, 208, 212, 212, 220, 221, 217, 227, 234, 238, 234, 227, 219, 220, 213, 203, 198, 172, 154, 133, 130, 124, 111, 251, 250, 70])
+    }, 
+    
+    'West': {'Two':
+    ([66, 217, 227, 221, 212, 182, 145, 138, 62, 43, 70],
+    [114, 119, 164, 175, 161, 152, 152, 166, 194, 156, 114]),
+    
+    'Asado Desert':
+    ([47, 63, 143, 148, 182, 208, 223, 229, 238, 233, 215, 207, 198, 185, 166, 145, 110, 87, 87, 46],
+    [228, 198, 170, 157, 158, 164, 179, 184, 205, 219, 219, 204, 206, 224, 226, 247, 248, 238, 234, 228]),
+    
+    'Three':
+    ([219, 254, 314, 310, 325, 317, 324, 334, 342, 370, 353, 350, 364, 330, 331, 318, 315, 306, 297, 281, 273, 250, 251, 241, 235, 235, 226, 232, 221],
+    [115, 94, 82, 58, 46, 38, 29, 32, 22, 38, 84, 120, 134, 153, 170, 172, 187, 190, 219, 233, 209, 194, 166, 157, 160, 182, 176, 158, 114]),
+    
+    'One':
+    ([46, 82, 111, 150, 170, 187, 204, 214, 234, 243, 236, 238, 241, 245, 247, 271, 277, 263, 256, 230, 218, 241, 214, 194, 192, 169, 157, 126, 113, 92, 96, 74, 64, 31, 25, 47],
+    [233, 238, 253, 253, 231, 228, 209, 225, 224, 214, 189, 187, 163, 169, 198, 214, 234, 254, 284, 286, 310, 322, 349, 349, 364, 388, 430, 419, 416, 422, 391, 378, 355, 334, 287, 234]),
+    
+    'West Paldean Sea':
+    ([70, 278, 284, 301, 201, 165, 146, 136, 107, 94, 80, 70, 40, 59, 22, 28, 30, 61, 72, 92, 88, 96, 92, 0, 0, 70],
+    [1, 1, 2, 39, 87, 86, 95, 104, 100, 72, 78, 110, 154, 197, 284, 332, 338, 358, 382, 393, 424, 426, 439, 439, 1, 0])
+    },
+    
+    'East': {'Three':
+    ([265, 355, 410, 406, 577, 820, 918, 948, 1371, 1619, 1717, 1738, 1679, 1546, 1555, 1499, 1452, 1281, 1183, 1196, 1034, 897, 803, 577, 504, 457, 372, 269, 269],
+    [589, 594, 555, 453, 389, 60, 77, 137, 290, 316, 376, 431, 534, 577, 624, 636, 598, 538, 658, 726, 799, 777, 722, 752, 782, 726, 713, 619, 585]),
+    
+    'Two':
+    ([581, 816, 987, 1055, 1209, 1222, 1200, 1290, 1461, 1504, 1551, 1546, 1499, 1452, 1410, 1427, 1495, 1392, 1358, 1303, 1247, 1098, 970, 807, 628, 581],
+    [769, 743, 816, 812, 743, 692, 666, 555, 624, 649, 645, 701, 726, 965, 1000, 1093, 1111, 1170, 1170, 1132, 1140, 1290, 1299, 1170, 803, 769]),
+    
+    'One':
+    ([196, 278, 286, 423, 602, 782, 940, 1119, 1273, 1311, 1358, 1414, 1448, 1546, 1602, 1649, 1640, 1598, 1504, 1452, 1418, 1119, 1025, 846, 829, 880, 713, 662, 581, 547, 525, 487, 461, 278, 269, 196],
+    [666, 688, 807, 786, 803, 1170, 1307, 1311, 1162, 1158, 1187, 1192, 1158, 1119, 1153, 1256, 1345, 1465, 1512, 1589, 1704, 1781, 1867, 1777, 1649, 1504, 1444, 1363, 1371, 1358, 1397, 1337, 1375, 1358, 863, 645]),
+    
+    'East Paldean Sea':
+    ([2042, 2042, 974, 978, 1042, 1046, 1132, 1435, 1478, 1529, 1619, 1679, 1653, 1572, 1444, 1431, 1491, 1516, 1572, 1563, 1700, 1743, 1747, 1717, 1756, 1824, 2037],
+    [158, 1948, 1948, 1867, 1909, 1871, 1803, 1730, 1580, 1529, 1478, 1324, 1192, 1111, 1072, 1004, 961, 739, 718, 589, 534, 444, 419, 367, 316, 308, 162])
+    },
 
-        return new_dict2
+    'North': {'Casseroya Lake':
+    ([116, 137, 103, 161, 127, 89, 127, 182, 291, 329, 401, 428, 490, 582, 644, 692, 709, 743, 829, 911, 979, 997, 969, 997, 1000, 1010, 997, 959, 976, 767, 661, 599, 589, 267, 113],
+    [894, 723, 664, 596, 555, 442, 366, 322, 277, 236, 202, 178, 158, 195, 205, 233, 342, 370, 462, 510, 524, 555, 582, 623, 651, 664, 695, 705, 798, 829, 901, 908, 921, 897, 897]),
     
-    combo_resistance = swap_indices(combo_effectiveness, combo_resistance)   
+    'Glaseado Mountain':
+    ([818, 842, 870, 942, 976, 1024, 1007, 1024, 1041, 1089, 1144, 1161, 1274, 1267, 1363, 1408, 1418, 1466, 1500, 1555, 1538, 1493, 1572, 1719, 1764, 1709, 1743, 1685, 1647, 1610, 1562, 1469, 1486, 1541, 1579, 1558, 1493, 1493, 1538, 1541, 1610, 1616, 1568, 1497, 1486, 1432, 1432, 1336, 1267, 1188, 1116, 1099, 1045, 1048, 1120, 1164, 1116, 1120, 1195, 1092, 1058, 1003, 990, 1007, 1007, 945, 897, 733, 712, 709, 760, 818],
+    [195, 250, 233, 216, 226, 308, 325, 346, 366, 377, 339, 260, 219, 120, 92, 113, 120, 116, 151, 147, 229, 349, 394, 527, 582, 719, 740, 801, 846, 860, 925, 1000, 1086, 1134, 1134, 1199, 1209, 1240, 1271, 1288, 1301, 1325, 1322, 1339, 1257, 1253, 1216, 1140, 1120, 1075, 1082, 1099, 1096, 1051, 1017, 979, 928, 788, 644, 579, 623, 616, 579, 568, 531, 500, 493, 336, 332, 243, 243, 199]),
     
-    combo_effectiveness_copy = combo_effectiveness.copy()    
-    perfect_party = [""] * len(combo_effectiveness_copy)
+    'Three':
+    ([1031, 1236, 1253, 1257, 1140, 1130, 1079, 1045, 1027, 1034, 979, 921, 846, 832, 911, 1027, 1045],
+    [68, 134, 127, 212, 253, 336, 360, 356, 318, 301, 212, 199, 229, 158, 103, 68, 75]),
     
-    #dv.plot_encounter_heatmap(combo_effectiveness, combo_resistance)            
+    'One':
+    ([1716, 1733, 1729, 1750, 1795, 1822, 1836, 1866, 1887, 1911, 1901, 1945, 1983, 2000, 2024, 2027, 2075, 2103, 2130, 2182, 2182, 2137, 2089, 1997, 1853, 1849, 1805, 1815, 1781, 1729, 1709, 1647, 1562, 1555, 1507, 1568, 1654, 1781, 1726, 1753, 1753, 1712],
+    [798, 812, 832, 842, 829, 842, 880, 880, 901, 870, 801, 699, 699, 723, 719, 702, 664, 671, 582, 582, 548, 551, 510, 503, 473, 401, 356, 308, 243, 236, 175, 151, 147, 240, 349, 377, 438, 579, 719, 733, 753, 801]),
     
+    'Tagtree Thicket':
+    ([1702, 1723, 1719, 1743, 1795, 1815, 1822, 1743, 1705, 1658, 1572, 1545, 1497, 1483, 1579, 1616, 1682, 1705],
+    [801, 812, 832, 856, 842, 849, 887, 979, 1031, 1089, 1123, 1120, 1075, 1003, 932, 870, 842, 801]),
+    
+    'Two':
+    ([1897, 2079, 2164, 2295, 2363, 2380, 2425, 2353, 2336, 2295, 2274, 2281, 2332, 2305, 2188, 2158, 2158, 2182, 2182, 2140, 2110, 2075, 2038, 2031, 1997, 1973, 1952, 1914, 1925, 1897],
+    [918, 993, 1027, 1038, 1079, 1034, 1027, 979, 979, 945, 887, 846, 801, 767, 747, 699, 616, 596, 589, 596, 688, 682, 709, 729, 733, 712, 712, 815, 873, 925]),
+    
+    'North Paldean Sea':
+    ([3, 2164, 2144, 2140, 2089, 2055, 2099, 2137, 2178, 2140, 2092, 1863, 1853, 1815, 1825, 1788, 1733, 1719, 1637, 1500, 1459, 1425, 1366, 1226, 1038, 908, 832, 829, 757, 705, 623, 486, 414, 387, 308, 281, 161, 116, 75, 116, 144, 96, 127, 106, 116, 147, 0, 7],
+    [3, 0, 62, 123, 199, 315, 387, 421, 541, 545, 497, 462, 387, 353, 301, 240, 226, 171, 140, 140, 99, 113, 86, 127, 62, 92, 144, 178, 229, 229, 185, 147, 171, 199, 240, 267, 322, 363, 445, 555, 589, 664, 736, 890, 911, 918, 932, 0])
+    },
+    
+    'The Great Crater of Paldea': {'The Great Crater of Paldea':
+    ([546, 626, 626, 715, 755, 856, 1017, 1117, 1270, 1350, 1350, 1347, 1290, 1215, 1063, 965, 879, 658, 546, 451, 399, 221, 175, 198, 178, 207, 195, 244, 244, 319, 333, 431, 474, 488, 543, 549],
+    [147, 149, 121, 115, 75, 78, 167, 192, 333, 626, 911, 1086, 1201, 1241, 1143, 1152, 1063, 1074, 1040, 913, 879, 859, 787, 767, 741, 712, 678, 603, 586, 497, 500, 402, 302, 253, 213, 147])
+    }
+    }                 
 
-    for i in range(len(combo_effectiveness_copy)):
-        for combo in combo_effectiveness_copy:
-            max_effectiveness = max(combo_effectiveness, key=combo_effectiveness.get)
-            max_resistant = max(combo_resistance, key=combo_resistance.get)
-            values_max_effectiveness = max(combo_effectiveness.values())
-            most_resistant = defaultdict(float)
-            most_effectiveness = [key for key, value in combo_effectiveness.items() if value == values_max_effectiveness]
-           
-            for maxes in most_effectiveness:
-                for resistance in combo_resistance: #criando um dicionário com as maiores resistências para fins de desempate.
-                    if maxes == resistance:
-                        most_resistant[resistance] = combo_resistance[maxes]
-            
-            if combo == max_effectiveness == max_resistant: #caso geral em que o tipo mais efetivo é também o mais reistente.
-                perfect_party[i] = combo
-                del combo_effectiveness[combo]
-                del combo_resistance[combo]
-                break
-            
-            elif combo in combo_effectiveness and combo in combo_resistance:
-                #if combo_effectiveness[combo] == combo_effectiveness[max_effectiveness]:  
-                        #verfifca se ainda está no dict de resistências pois pode ja ter sido deletado.
-                        #if combo_resistance[combo] == combo_resistance[max_resistant]: 
-                            perfect_party[i] = max(most_resistant)
-                            del most_resistant[perfect_party[i]]
-                            del combo_effectiveness[perfect_party[i]]
-                            del combo_resistance[perfect_party[i]]
-                            break
-                            
-    return perfect_party
+    if app_1.province is not None:
+        app_2 = InteractiveMap_province(coordenadas_area[app_1.province], app_1.province)
 
-def encounter_biome(v, p, a, b):
+        # Aguarda o fechamento da janela antes de retornar o valor da province
+        app_2.root.wait_window()
     
-    #Esta função verfica em que província/área o bioma está localizado#
+    coordenadas_biome = {'Grass':
+    ([1, 111, 106, 1, 1],
+    [1, 2, 39, 40, 2]),
     
-    name_file = "biomas.txt"
+    'Forest':
+    ([109, 108, 218, 218, 108],
+    [1, 41, 42, 1, 2]),
     
-    #uso do try para testes de erro
+    'Town':
+    ([219, 218, 328, 328, 218],
+    [0, 42, 41, 0, 0]),
     
-    with open(name_file, encoding='utf-8', mode='r') as file:
-        nlines = 1
-        found = False
+    'Desert':
+    ([328, 328, 438, 438, 329],
+    [1, 41, 41, 0, 1]),
+    
+    'Mountain':
+    ([1, 108, 108, 0, 1],
+    [42, 42, 82, 82, 41]),
+    
+    'Snow':
+    ([108, 218, 218, 109, 109],
+    [42, 41, 81, 82, 42]),
+    
+    'Swamp':
+    ([219, 328, 328, 218, 219],
+    [42, 42, 83, 82, 42]),
+    
+    'Lake':
+    ([329, 437, 436, 328, 330],
+    [41, 41, 84, 82, 41]),
+    
+    'River':
+    ([0, 109, 108, 0, 0, 108],
+    [82, 82, 125, 122, 82, 83]),
+    
+    'Ocean':
+    ([109, 217, 218, 108, 108],
+    [82, 82, 122, 123, 79]),
+    
+    'Underground':
+    ([217, 328, 328, 218, 219],
+    [82, 82, 123, 122, 82]),
+    
+    'Rocky':
+    ([328, 436, 438, 327, 330],
+    [83, 84, 123, 124, 80]),
+    
+    'Cave':
+    ([1, 106, 106, 1, 0],
+    [124, 124, 184, 186, 124]),
+    
+    'Beach':
+    ([107, 106, 219, 218, 107],
+    [125, 186, 184, 122, 123]),
+    
+    'Flower':
+    ([219, 328, 328, 219, 218],
+    [123, 124, 182, 184, 122]),
+    
+    'Bamboo':
+    ([328, 438, 437, 327, 329],
+    [124, 125, 183, 182, 123]),
+    
+    'Mine':
+    ([1, 107, 108, 1, 1],
+    [186, 186, 225, 225, 186]),
+    
+    'Olive':
+    ([110, 218, 218, 108, 110],
+    [187, 186, 226, 224, 188]),
+    
+    'Ruins':
+    ([219, 329, 329, 218, 219],
+    [186, 184, 225, 224, 186])
+    }
         
-        # Itera pelas linhas do arquivo
-        for line in file:
-            if b in line:
-                found = True
-                break  # Se encontrou a palavra, podemos parar a busca
-            
-            nlines += 1
-        
-        if not found:
-            print(f'O bioma "{b}" indicado não existe.')
-            sys.exit()
+    if app_2.area is not None:
+         app_3 = InteractiveButton_biome(coordenadas_biome, app_1.province, app_2.area)
+    
+         # Aguarda o fechamento da janela antes de retornar o valor da province
+         app_3.root.wait_window()
+    
+    
+    return app_0.version, app_1.province, app_2.area, app_3.biome
+    
+# Obtém o valor da province após a execução da janela
+version_value, province_value, area_value, biome_value = main()
 
-       
-    return line
-
-
-def poke_finder(area, region, version):
-        
-        #Acha a(s) line em que se localiza os pokemon de certa região e devolve o nº da line e o nome do pokemon numa tupla 
-        
-    name_file = "encounter_info.txt"
-    pokenumber = 0
-        
-    
-    with open(name_file, encoding = 'utf-8', mode = 'r') as file:
-        lines = file.readlines()
-        lineindex = []
-            
-        #enumera cada linha além de capturar o conteúdo de cada uma
-        for number_line, line in enumerate(lines, start=1):
-            if f'{region} ({area})' in line:
-                pokenumber = number_line - 6 
-            
-            if version in line and pokenumber == number_line - 8:
-                condition = True
-            else:
-                condition = False   
-            
-            if condition:
-                lineindex.append(pokenumber)
-                
-             
-
-        if lineindex != []:
-            return lineindex
-        else:
-            return f"A region '{region}' não foi encontrada no '{name_file}'."
-
-    
-    
-    
-def asses_encounter(pokelines, bio):
-    
-    #Acha a taxa de encontro do pokémon de acordo com o índice da linha.
-    
-    name_file = "encounter_info.txt"
-   
-    encounter_rate = []
-    per_biome = []
-    names = []
-    line_encounter_rate = []
-    line_per_biome = []
-    
-    
-    with open(name_file, encoding = 'utf-8', mode = 'r') as file:
-        lines = file.readlines()
-                
-        for line_found, line in enumerate(lines, start=1):
-                    
-            for pokeline in pokelines:
-                
-                if line_found == pokeline:
-                    line_encounter_rate.append(line_found + 2) #cria uma lista com localização de todos os encounter rates.
-                    line_per_biome.append(line_found + 5) #cria uma lista com a localização de todos os biome rates.
-                    names.append(line.split(":")[0].strip())
-        
-        
-        for line_found, line in enumerate(lines, start=1):
-             
-            for number_line in line_encounter_rate:
-                
-                if number_line == line_found: #pega o conteúdo pós ":"
-                    encounter_rate.append(line.split(":")[1].strip())
-        
-        
-        for line_found, line in enumerate(lines, start=1):
-                         
-            for number_line in line_per_biome:
-                
-                if number_line == line_found: #tal expressão regular localiza o conteúdo de um parenteses pós a ocorrência de uma palavra específica.
-    
-                    if bio in line:
-                        pattern = re.search(rf'{bio}\s*\((.*?)\)', line)
-                        bio_data =  int(pattern.group(1)) #encontra o padrão "'bio' ()" dentro da frase.
-                        per_biome.append(bio_data)
-                    
-                    else:
-                        per_biome.append(1)
-    
-    rates = [[encounter_rate, per_biome], names]
-    
-    return rates
-            
-          
-
-def calculate_rate(number1, number2, name):
-    
-    #Esta função recebe duas listas com porcentagens e calcula a taxa de encontro de cada pokémon e rankeia os mais prováveis de ser encontrados em certa região.
-    
-    rate = []
-    
-    for i in range(0, len(number1), 1): #uso do range().
-        rate.append((int(number1[i])/100)*(number2[i]/100)) #multiplica as taxas e adiciona na primeira "coluna" de uma nova lista rates.
-    
-    rate_desc = sorted(zip(rate,name), reverse=True) #zip combina as duas listas de forma que os nomes mudem de ordem de acordo com uma organização decrescente. 
-    ranking = [[x[0] for x in rate_desc], [x[1] for x in rate_desc]]
-    ranking[0] = [round(x*100, 2) for x in ranking[0]] #transforma os valores em porcentagem, arredondando com dois algarismos significativos.
-    
-    #print(ranking) 
-
-    dv.plot_encounter_rate(ranking[0], ranking[1])
-    
-    return ranking
-
-def types(ranking):
-    
-    #Esta função recebe uma lista com as porcentagens de encontro e nomes e retorna os tipos mais prováveis de aparecer.
-    
-    name_file = "pokémon.txt"
-    poke_types = [[],[], ranking[1]]
-    
-    
-    with open(name_file, encoding= 'utf-8', mode = 'r') as file:
-        lines = file.readlines()
-        
-        for i in range(len(ranking[1])):
-           
-            for line in lines:
-                
-                if ranking[1][i] in line: #verifica se o nome do pokémon está na linha
-                    type1 = line.split(",")[1].strip()
-                    type2 = line.split(",")[2].strip()
-                    poke_types[0].append(type1)
-                    poke_types[1].append(type2)
-    
-    print(poke_types[0], poke_types[1])
-    
-    types_list = [f"{primary}, {secondary}" for primary, secondary in zip(poke_types[0], poke_types[1])]
-    print(types_list)
-    dv.main(types_list)
-            
-    return poke_types
-                    
-            
-    
-def ideal_party(typelist):
-    
-    #Esta função recebe uma lista ordenada em forma decrescente dos tipos mais 
-    #adequados e retorna uma equipe perfeita de 6 pokémon de S/V.
-    
-    random.seed()
-    
-    name_file = "pokémon.txt"
-    
-    from collections import defaultdict
-    
-    perfect_party = defaultdict(lambda: [])
-    better_pokes = defaultdict(lambda: []) 
-    
-    
-
-    with open(name_file, encoding = 'utf-8', mode = 'r') as file:
-        lines = file.readlines()
-        
-        new_typelist = []
-        typelist_original = typelist.copy()
-        
-        for line in lines:
-            for types in typelist: #Verifica se dado tipo está na pokedex de paldea.
-                if types in line and line.split(" , ")[2].strip() == "": #localiza tipos únicos
-                    new_typelist.append(types)
-                    typelist.remove(types)
-                elif types.count(" , ") == 1:
-                    if all(type_ in line for type_ in types.split(" , ")): #localiza tipos duplos
-                        new_typelist.append(types)
-                        typelist.remove(types)
-                    
-        type_index = {type_: index for index, type_ in enumerate(typelist_original)}
-        new_typelist.sort(key=lambda x: type_index.get(x, float('inf')), reverse=False)
-        better_types = new_typelist[:6]
-        
-        for types in better_types:
-            for poke in lines:
-                if types in poke and poke.split(" , ")[2].strip() == "":
-                    better_pokes[types].append(poke.split(" , ")[0].strip())
-                elif types.count(" , ") == 1: 
-                    if all(type_ in poke for type_ in types.split(" , ")):
-                        better_pokes[types].append(poke.split(" , ")[0].strip())
-        
-                    
-        #teste=list(better_pokes.values())
-                   
-        for types, pokes in better_pokes.items():
-
-                perfect_party[types] = random.choice(pokes)
-            
-        
-    return perfect_party            
-                    
-
-def compare_parties(atual, ideal):
-   
-    #Esta função recebe a equipe atual e a ideal e compara as duas e faz a devolutiva positiva(manutenção) ou negativa(troca) da equipe atual.
-    
-    from collections import defaultdict
-    
-    name_file = "pokémon.txt"
-    
-    types_atual = defaultdict(float)
-   
-    
-    with open(name_file, encoding = 'utf-8', mode = 'r') as file:
-        lines = file.readlines()
-        
-        for pokes in atual:
-            pokemon_encontrado = False  # Inicializa como False para cada novo Pokémon
-
-            for line in lines:
-                if pokes != "":
-                    if pokes in line:
-                        types_atual[pokes] = line.split(" , ")[1].strip() + " , " + line.split(" , ")[2].strip()
-                        pokemon_encontrado = True  # Marca que o Pokémon foi encontrado
-        
-            if pokes != "" and not pokemon_encontrado:
-                return f"O pokémon {pokes} não se encontra em Paldea."
-        
-        
-        
-        for pokes_atuals, types_atuals  in types_atual.items():
-            for types_ideals, pokes_ideals  in ideal.items():
-               if  types_atuals == types_ideals: 
-                   del ideal[types_atuals] 
-               elif types_atuals.split(" , ")[-1]+" , "+types_atuals.split(" , ")[0] == types_ideals:
-                   del ideal[types_atuals.split(" , ")[-1]+" , "+types_atuals.split(" , ")[0]]
-        
-        ideal_str = json.dumps(list(ideal.values()), ensure_ascii=False)
-        atual_str = json.dumps(list(types_atual.keys()), ensure_ascii=False)
-        
-        if len(ideal) == 0:
-            return f"A equipe {atual_str} já é ideal." #Caso em que a equipe ideal é a atual.
-        elif len(ideal) == 6:
-            return f"A equipe ideal é {ideal_str}." #Caso em que não é dado nenhum pokémon ou nenhum da equipe é ideal.
-        elif len(ideal) >= 1:  
-            return f"Para ficar ideal, à sua equipe {atual_str} deve ser adionados os pokémons {ideal_str}" #Caso em que a equipe já possui pokes ideais.
-        
-    
-    
-main()
+# Agora você pode usar province_value fora da função main
+print(version_value, province_value, area_value, biome_value)
